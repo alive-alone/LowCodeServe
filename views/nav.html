@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>增加导航</title>
+  <!--<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>-->
+  <!--<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>-->
+</head>
+
+<body>
+  <form action="/api/addProductPic" method="post" enctype="multipart/form-data">
+    标题：<input type="text" name="title" id="title">
+    <br>
+    <br>
+
+    图片：<input type="file" name="pic" id="pic">
+    <br>
+    <br>
+
+    类型：<input type="text" name="type" id="type">
+    <br>
+    <br>
+    <input type="submit" value="提交">
+  </form>
+</body>
+
+</html>
