@@ -4,13 +4,15 @@ const ejs = require("ejs");
 const joi = require('joi')
 // 创建服务器的实例对象
 const app = new express()
+// 导入端口号
+const { BASE_URL, PORT } = require("./db/index")
 
 // 配置模板引擎
 app.engine("html", ejs.__express)
 app.set("view engine", "html")
 
 // 配置静态web目录
-app.use(express.static("static"))
+app.use("/public", express.static("static"))
 
 // 导入并配置 cors 中间件
 const cors = require("cors")
@@ -36,9 +38,16 @@ app.use((req, res, next) => {
 })
 
 // 一定要在路由之前配置解析 Token 的中间件
-const expressJWT = require("express-jwt")
-const config = require("./config/config")
-app.use(expressJWT({ secret: config.jwtSecretKey, algorithms: ['HS256'] }).unless({ path: [{ url: /^\/api/ }, { url: /^\/upload/, methods: ['GET'] }, { url: '/user/login', methods: ['POST'] }] }))
+// const expressJWT = require("express-jwt")
+// const config = require("./config/config")
+// app.use(expressJWT({ secret: config.jwtSecretKey, algorithms: ['HS256'] }).unless({ path: [{ url: /^\/api/ }, { url: /^\/upload/, methods: ['GET'] }, { url: '/user/login', methods: ['POST'] }] }))
+
+// 导入并使用路由模块
+const codeModuleRouter = require("./routes/codeModules")
+const imagesRouter = require("./routes/images")
+const viodesRouter = require("./routes/videos")
+app.use(codeModuleRouter, imagesRouter, viodesRouter)
+
 
 // 定义错误级别的中间件 -> 错误级别中间件必须注册在所有路由之后
 app.use((err, req, res, next) => {
@@ -51,6 +60,6 @@ app.use((err, req, res, next) => {
 })
 
 // 监听端口 端口号建议写成3000以上
-app.listen(3000, () => {
-  console.log('api server running at http://192.168.0.5:3000')
+app.listen(PORT, () => {
+  console.log(`api server running at ${BASE_URL}:${PORT}`)
 })
