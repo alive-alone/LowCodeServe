@@ -15,9 +15,9 @@ const getId = require("../model/getId")
  */
 
 // Temporary path to upload files
-const STATIC_TEMPORARY = path.join('static/temporary')
+const STATIC_TEMPORARY = path.join('static', 'temporary')
 
-const { BASE_URL, PORT } = require("../db/index")
+const { SERVER_URL, PORT } = require("../db/index")
 // 上传视频
 exports.uploadVideos = (req, res) => {
   let id = req.file.filename.split(".")
@@ -41,12 +41,12 @@ exports.sliceUploadVideo = (req, res) => {
     let filename = fields.filename[0]
     let hash = fields.hash[0]
     let chunk = files.chunk[0]
-    let dir = `${STATIC_TEMPORARY}\\${filename}`
+    let dir = path.join(STATIC_TEMPORARY, filename)
     // console.log(filename, hash, chunk)
     try {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir)
       const buffer = fs.readFileSync(chunk.path)
-      const ws = fs.createWriteStream(`${dir}\\${hash}`)
+      const ws = fs.createWriteStream(path.join(dir, hash))
       ws.write(buffer)
       ws.close()
       res.send({
@@ -66,24 +66,74 @@ exports.mergeSliceVideo = (req, res) => {
   // file path
   const filename = req.params.filename
   const suffix = req.params.suffix
-  const STATIC_FILES = path.join(`static/${suffix == 'mp4' ? 'videos' : 'images'}`, day)
+  const STATIC_FILES = path.join('static', `${suffix == 'mp4' ? 'videos' : 'images'}`, day)
   try {
     let len = 0
-    const bufferList = fs.readdirSync(`${STATIC_TEMPORARY}\\${filename}`).map((hash, index) => {
-      const buffer = fs.readFileSync(`${STATIC_TEMPORARY}\\${filename}\\${index}`)
+    const bufferList = fs.readdirSync(path.join(STATIC_TEMPORARY, filename)).map((hash, index) => {
+      const buffer = fs.readFileSync(path.join(STATIC_TEMPORARY, filename, String(index)))
       len += buffer.length
       return buffer
     });
     //Merge files
     const buffer = Buffer.concat(bufferList, len);
-    if (!fs.existsSync(STATIC_FILES)) fs.mkdirSync(STATIC_FILES)
-    const ws = fs.createWriteStream(`${STATIC_FILES}\\${filename}.${suffix}`)
+    if (!fs.existsSync(STATIC_FILES)) {
+      fs.mkdirSync(STATIC_FILES)
+    }
+    const ws = fs.createWriteStream(path.join(STATIC_FILES, `${filename}.${suffix}`))
     ws.write(buffer);
     ws.close();
-    mergeSliceVideoSql(filename, suffix, `${STATIC_FILES}\\${filename}.${suffix}`, res)
+    mergeSliceVideoSql(filename, suffix, path.join(STATIC_FILES, `${filename}.${suffix}`), res)
   } catch (error) {
     console.error(error);
     res.cc(error)
+  }
+}
+
+// 根据 Stream 合并文件
+function mergeSliceVideoByStream(req, res) {
+  const day = sd.format(new Date(), 'YYYYMMDD');
+  // file path
+  const filename = req.params.filename
+  const suffix = req.params.suffix
+  const STATIC_FILES = path.join('static', `${suffix == 'mp4' ? 'videos' : 'images'}`, day)
+  try {
+    if (!fs.existsSync(STATIC_FILES)) {
+      fs.mkdirSync(STATIC_FILES)
+    }
+    const tempDir = path.join(STATIC_TEMPORARY, filename) // 临时目录
+    const targetFile = path.join(STATIC_FILES, `${filename}.${suffix}`) // 目标文件
+    mergeFileByStream(tempDir, targetFile)
+    mergeSliceVideoSql(filename, suffix, path.join(STATIC_FILES, `${filename}.${suffix}`), res)
+  } catch (error) {
+    console.error(error);
+    res.cc(error)
+  }
+}
+
+function mergeFileByStream(tempDir, targetFile) {
+  // 合并上传的视频文件
+  const tempFiles = fs.readdirSync(tempDir); // 获取临时目录下的所有文件
+  const writeStream = fs.createWriteStream(targetFile); // 创建一个可写流
+  // 递归合并分片文件
+  mergeRecursive(tempFiles, writeStream, tempDir);
+  // 递归合并分片文件
+  function mergeRecursive(files, writeStream, tempDir) {
+    // 递归终止条件
+    if (files.length === 0) {
+      writeStream.end(); // 关闭可写流
+      return;
+    }
+    const currentFile = path.resolve(tempDir, files.shift());
+    const readStream = fs.createReadStream(currentFile); // 创建一个可读流
+    readStream.pipe(writeStream, { end: false }); // 将可读流的内容写入到可写流中
+    readStream.on('end', function () {
+      // 继续合并下一个分片文件
+      mergeRecursive(files, writeStream, tempDir);
+    });
+    readStream.on('error', function (error) {
+      console.error(error);
+      writeStream.close(); // 关闭可写流，防止内存泄漏
+    });
   }
 }
 
@@ -115,12 +165,12 @@ exports.getVideos = (req, res) => {
     })
   })
 }
-// path 拼接 BASE_URL
+// path 拼接 SERVER_URL
 function pathSplice(videos) {
   for (let i = 0; i < videos.length; i++) {
-    let path = videos[i].path.split("\\")
-    path[0] = "public"
-    videos[i].path = `http://${BASE_URL}:${PORT}/${path.join("/")}`
+    let paths = videos[i].path.split(path.sep)
+    paths[0] = "public"
+    videos[i].path = `http://${SERVER_URL}:${PORT}/${paths.join("/")}`
   }
   return videos
 }

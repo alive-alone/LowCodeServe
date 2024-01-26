@@ -2,12 +2,13 @@
 const { db } = require("../db/index")
 // 导入文件操作模块
 const fs = require("fs")
+const path = require('path')
 /**
  * 删除文件：fs.unlink(path, callback:(err)=>void)
  * 删除目录：fs.rmdir(path,callback:(err)=>void)
  */
 
-const { BASE_URL, PORT } = require("../db/index")
+const { SERVER_URL, PORT } = require("../db/index")
 // 上传图片
 exports.uploadImages = (req, res) => {
   let id = req.file.filename.split(".")
@@ -38,12 +39,12 @@ exports.getImages = (req, res) => {
     })
   })
 }
-// image path 拼接 BASE_URL
+// image path 拼接 SERVER_URL
 function pathSplice(images) {
   for (let i = 0; i < images.length; i++) {
-    let path = images[i].path.split("\\")
-    path[0] = "public"
-    images[i].path = `http://${BASE_URL}:${PORT}/${path.join("/")}`
+    let paths = images[i].path.split(path.sep)
+    paths[0] = "public"
+    images[i].path = `http://${SERVER_URL}:${PORT}/${paths.join("/")}`
   }
   return images
 }

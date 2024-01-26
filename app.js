@@ -48,7 +48,6 @@ const imagesRouter = require("./routes/images")
 const viodesRouter = require("./routes/videos")
 app.use(codeModuleRouter, imagesRouter, viodesRouter)
 
-
 // 定义错误级别的中间件 -> 错误级别中间件必须注册在所有路由之后
 app.use((err, req, res, next) => {
   // 验证失败导致的错误
