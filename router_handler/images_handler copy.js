@@ -7,7 +7,7 @@ const fs = require("fs")
  * 删除目录：fs.rmdir(path,callback:(err)=>void)
  */
 
-const { SERVER_URL, PORT } = require("../db/index")
+const { SERVER_URL } = require("../db/index")
 // 上传图片
 exports.uploadImages = (req, res) => {
   let id = req.file.filename.split(".")
@@ -43,7 +43,7 @@ function pathSplice(images) {
   for (let i = 0; i < images.length; i++) {
     let path = images[i].path.split("\\")
     path[0] = "public"
-    images[i].path = `http://${SERVER_URL}:${PORT}/${path.join("/")}`
+    images[i].path = `http://${SERVER_URL}/${path.join("/")}`
   }
   return images
 }

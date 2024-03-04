@@ -17,7 +17,7 @@ const getId = require("../model/getId")
 // Temporary path to upload files
 const STATIC_TEMPORARY = path.join('static', 'temporary')
 
-const { SERVER_URL, PORT } = require("../db/index")
+const { SERVER_URL } = require("../db/index")
 // 上传视频
 exports.uploadVideos = (req, res) => {
   let id = req.file.filename.split(".")
@@ -170,7 +170,7 @@ function pathSplice(videos) {
   for (let i = 0; i < videos.length; i++) {
     let paths = videos[i].path.split(path.sep)
     paths[0] = "public"
-    videos[i].path = `http://${SERVER_URL}:${PORT}/${paths.join("/")}`
+    videos[i].path = `http://${SERVER_URL}/${paths.join("/")}`
   }
   return videos
 }

@@ -1,7 +1,7 @@
 const mysql = require('mysql')
 
 const BASE_URL = '127.0.0.1'
-const SERVER_URL = '47.115.206.105'
+const SERVER_URL = 'https://coderserver.aliveawait.top'
 // const SERVER_URL = '127.0.0.1'
 const PORT = 8989
 const db = mysql.createPool({
